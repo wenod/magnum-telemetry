@@ -1,0 +1,25 @@
+// Magnum's telemetry server: OTLP/HTTP JSON in, a few numbers per agent turn kept in D1, an
+// owner's dashboard. Magnum's own deployment; to run your own, change the route and the
+// database id (README.md).
+{
+  "name": "magnum-telemetry",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-11-01",
+  "routes": [{ "pattern": "telemetry.magnumade.com", "custom_domain": true }],
+  "workers_dev": false,
+  "d1_databases": [
+    { "binding": "DB", "database_name": "magnum-telemetry", "database_id": "37c3f6a0-48c1-4e09-a3ca-e4e34ccae763", "migrations_dir": "migrations" }
+  ],
+  // Anonymous writes (no WRITE_KEY): per install id, and per IP address (writes and sign-ins).
+  "ratelimits": [
+    { "name": "LIMIT_INSTALL", "namespace_id": "4101", "simple": { "limit": 120, "period": 60 } },
+    { "name": "LIMIT_IP", "namespace_id": "4102", "simple": { "limit": 600, "period": 60 } }
+  ],
+  "vars": {
+    // Rows older than this many days are deleted daily.
+    "RETENTION_DAYS": "90"
+  },
+  // Daily, 03:17 UTC: delete rows past RETENTION_DAYS.
+  "triggers": { "crons": ["17 3 * * *"] },
+  "observability": { "enabled": false }
+}
